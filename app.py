@@ -110,14 +110,6 @@ def return_song_amounts():
                                  'autosize': True})
     return jsonify(response)
     
-@app.route("/singers_songs/")
-def return_songs_by_singer():
-    return render_template("singers_songs.html")
-
-@app.route("/artists_songs/")
-def return_songs_by_producer():
-    return render_template("artists_songs.html")
-    
 @app.route("/")
 def return_template():
-    return render_template("title_template.html")
+    return render_template("main.html")
