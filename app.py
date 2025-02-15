@@ -2,8 +2,16 @@ import sqlite3
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
+SONGS = 0
+VIEWS = 1
+YEARLY = 4
+MONTHLY = 7
+DAILY = 10
+AT = 0
+PER = 1
+INCR = 2
 
-def get_songs(artist, comparison_type, date_type):
+def get_songs(mode):
     rev_date_dict = {4 : ["year", "years", "yearly"],
                      7 : ["month", "months", "monthly"],
                      10 : ["day", "days", "daily"]}
@@ -55,14 +63,12 @@ def get_songs(artist, comparison_type, date_type):
     return x_axis[1:], y_axis[1:]
 
 def get_song_views(songVID, comparison_type, date_type):
-    rev_date_dict = {4 : ["year", "years", "yearly"],
-                     7 : ["month", "months", "monthly"],
-                     10 : ["day", "days", "daily"]}
+    
     date_dict = {v:k for k,li in rev_date_dict.items() for v in li}
     date = date_dict
     connection = sqlite3.connect("Views.db")
     cursor = connection.cursor()
-    views = cursor.execute(f"SELECT * FROM Youtube WHERE VID IS {songVID}")
+    views = cursor.execute(f"SELECT Name, TotalViews, FROM Youtube WHERE VID IS {songVID}")
     if comparison_type != "increase":
         pass
         
@@ -88,21 +94,7 @@ def return_song_amounts():
         'body': []
         }
     for artist in request.json["artists"]:
-        match request.json["subtype"]:
-            case "spd":
-                x_axis, y_axis = get_songs(artist, "per", "day")
-            case "sam":
-                x_axis, y_axis = get_songs(artist, "at", "month")
-            case "spm":
-                x_axis, y_axis = get_songs(artist, "per", "month")
-            case "sim":
-                x_axis, y_axis = get_songs(artist, "increase", "monthly")
-            case "say":
-                x_axis, y_axis = get_songs(artist, "at", "year")
-            case "spy":
-                x_axis, y_axis = get_songs(artist, "per", "year")
-            case "siy":
-                x_axis, y_axis = get_songs(artist, "increase", "yearly")
+        x_axis, y_axis = get_songs(response["body"]["subtype"])
         response["body"].append({'x': x_axis,
                                  'y': y_axis,
                                  'mode': 'lines',
