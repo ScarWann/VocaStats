@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.js"></script>
+<head>
+    <title>Vocaloid Stats</title>
+    <link href={{url_for('static', filename = "styles/songs_styling.css")}} rel = "stylesheet" />
+    <link rel="shortcut icon" type="image/jpg" href={{url_for('static', filename = "favicon.ico")}}/>
+    <script src={{url_for('static', filename = "scripts/singers_songs_script.js")}}></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+    <style>
+        #singerOutput {
+            display: none;
+        }
+    </style>
+</head>
+<body id="body" ng-app="singersSongsApp" ng-controller="singersSongsController">
+    <div id="main-sidebar" class="main-sidebar">
+        <a href="http://127.0.0.1:5000/artists_songs/" class="sideButton" id="artistsButton">Artists</a>
+        <a href="#" class="sideButton" id="singersButton">Singers</a>
+        <a href="#" class="sideButton" id="songsButton">Songs</a>
+        <a href="#" class="sideButton" id="switchButton" ng-click="switchMode()">Switch</a>
+    </div>
+    <div id="mainContainer">
+        <div id="mainHeader">
+            <p id="singerOutput"> Amount of songs featuring <span id="singer">vocaloid</span> (as of mid-november 2024): </p>
+            <p>
+                <input type="text" id="firstname" name="artist" placeholder="Enter singer name" ng-model="name">
+                <label for="subtypeDropdown">Choose mode:</label>
+                <select name="subtypes" id="subtypeDropdown">
+                    <option value="">--Please choose an option--</option>
+                    <option value="spd">Songs per day</option>
+                    <option value="sam">Songs at month</option>
+                    <option value="spm">Songs per month</option>
+                    <option value="sim">Songs growth increase per month</option>
+                    <option value="say">Songs at year</option>
+                    <option value="spy">Songs per year</option>
+                    <option value="siy">Songs growth increase per year</option>
+                </select>
+                <button type="submit" ng-click="submit()"> Submit </button> 
+            </p>
+            <div id="chart" style="width:70%;height:100%;"></div>
+        </div>
+    </div>
+</body>
+</html>
