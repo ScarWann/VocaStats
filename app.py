@@ -2,16 +2,8 @@ import sqlite3
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
-SONGS = 0
-VIEWS = 1
-YEARLY = 4
-MONTHLY = 7
-DAILY = 10
-AT = 0
-PER = 1
-INCR = 2
 
-def get_songs(mode):
+def get_songs(artist, comparison_type, date_type):
     rev_date_dict = {4 : ["year", "years", "yearly"],
                      7 : ["month", "months", "monthly"],
                      10 : ["day", "days", "daily"]}
@@ -94,7 +86,21 @@ def return_song_amounts():
         'body': []
         }
     for artist in request.json["artists"]:
-        x_axis, y_axis = get_songs(response["body"]["subtype"])
+        match request.json["subtype"]:
+            case "spd":
+                x_axis, y_axis = get_songs(artist, "per", "day")
+            case "sam":
+                x_axis, y_axis = get_songs(artist, "at", "month")
+            case "spm":
+                x_axis, y_axis = get_songs(artist, "per", "month")
+            case "sim":
+                x_axis, y_axis = get_songs(artist, "increase", "monthly")
+            case "say":
+                x_axis, y_axis = get_songs(artist, "at", "year")
+            case "spy":
+                x_axis, y_axis = get_songs(artist, "per", "year")
+            case "siy":
+                x_axis, y_axis = get_songs(artist, "increase", "yearly")
         response["body"].append({'x': x_axis,
                                  'y': y_axis,
                                  'mode': 'lines',
