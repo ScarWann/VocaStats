@@ -1,38 +1,12 @@
-import requests
 from sqlite3 import connect
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.axis import Axis   
 from datetime import date
-import os
-import googleapiclient.discovery
-import googleapiclient.errors
-from google.oauth2.credentials import Credentials
 
 current_date = str(date.today())
 mpl.style.use('bmh')
-scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
-
-def initialise_PV_database():
-    connection = connect("TrackedPVs.db")
-    cursor = connection.cursor()
-    cursor.execute("CREATE TABLE YoutubePVs (ID INTEGER PRIMARY KEY, SongVID int, YTID nvarchar(12))")
-    cursor.close()
-
-def append_YTPV(id: int):
-    YTPVs = []
-    connection = connect("TrackedPVs.db")
-    cursor = connection.cursor()
-    response = requests.get(f'https://vocadb.net/api/songs/{id}?fields=PVs')
-    PVs = response.json()["pvs"]
-    for PV in PVs:
-        if PV["service"] == "Youtube":
-            cursor.execute(f"INSERT INTO YoutubePVs (SongVID, YTID) VALUES ({id}, '{PV["url"][-11:]}')")
-            YTPVs.append(PV["url"][-11:])
-    connection.commit()
-    connection.close()
-    return YTPVs
 
 def analysis(artists: list):
     connection = connect("Vocaloid.db")
@@ -177,7 +151,10 @@ def analysis(artists: list):
         singers_stats = list(singers_stats)
         for i, singer_stats in enumerate(singers_stats):
             #ax.plot(singer_stats[0][1:], singer_stats[1][1:])
-            line, = ax.plot(singer_stats[0][1:], singer_stats[1][1:], color=singer_color[sorted_artists[i]], label=sorted_artists[i])
+            if artist in singer_color:
+                line, = ax.plot(singer_stats[0][1:], singer_stats[1][1:], color=singer_color[sorted_artists[i]], label=sorted_artists[i])
+            else:
+                line, = ax.plot(singer_stats[0][1:], singer_stats[1][1:], label=sorted_artists[i])
             lines.append(line)
         print(sorted_artists)
 
@@ -188,64 +165,9 @@ def analysis(artists: list):
     mpl.style.use('seaborn-v0_8')   
     plt.show()                      
 
-def request_token(filename: str):
-    from google_auth_oauthlib.flow import InstalledAppFlow
-
-    flow = InstalledAppFlow.from_client_secrets_file(
-        'credentials.json', scopes)
-
-    credentials = flow.run_local_server(port=0)
-
-    with open(f'{filename}.json', 'w') as token_file:
-        token_file.write(credentials.to_json())
-
-def refresh_token(filename: str):
-    
-    # Load the credentials from token.json
-    credentials = Credentials.from_authorized_user_file(f'{filename}.json', scopes)
-
-    # Check if the token is expired and refresh it
-    if not credentials.valid and credentials.expired and credentials.refresh_token:
-        from google.auth.transport.requests import Request
-
-        credentials.refresh(Request())
-
-    # Save the refreshed credentials
-    with open(f'{filename}.json', 'w') as token_file:
-        token_file.write(credentials.to_json())
-
-def yt_request(Id: str, filename: str):
-    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
-    api_service_name = "youtube"
-    api_version = "v3"
-    credentials = Credentials.from_authorized_user_file(f'{filename}.json', scopes)
-    if not credentials.valid and credentials.expired and credentials.refresh_token:
-        request_token(filename)
-    else:
-        refresh_token(filename)
-    credentials = Credentials.from_authorized_user_file(f'{filename}.json', scopes)
-    youtube = googleapiclient.discovery.build(
-        api_service_name, api_version, credentials=credentials)
-
-    request = youtube.videos().list(
-        part="snippet,contentDetails,statistics",
-        id=Id
-    )
-    response = request.execute()
-
-    return response
 
 def main():
-    """YTPVs = append_YTPV(288238)
-    ids = YTPVs[0]
-    if len(YTPVs) > 1:
-        for YTPV in YTPVs[1:]:
-            ids = f"{ids},{YTPV}"""
-    items = yt_request(f'Q89OdbX7A8E', "token1")["items"]
-    #print(items)
-    for item in items:
-        print(item["snippet"]["localized"]["title"], item["statistics"])
+    analysis(["歌愛ユキ", "NONE", "CircusP"])
 
 
 if __name__ == "__main__":

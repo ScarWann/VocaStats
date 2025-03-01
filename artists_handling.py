@@ -4,8 +4,11 @@ import requests
 def init():
     connection = connect("Vocaloid.db")
     cursor = connection.cursor()
-    cursor.execute("DROP TABLE Artists")
-    cursor.execute("DROP TABLE Aliases")
+    try:
+        cursor.execute("DROP TABLE Artists")
+        cursor.execute("DROP TABLE Aliases")
+    except:
+        pass
     cursor.execute("CREATE TABLE Artists (VID int, Name nvarchar(255))")
     cursor.execute("CREATE TABLE Aliases (VID int, Alias nvarchar(255))")
     cursor.close()
@@ -18,8 +21,8 @@ def get_alias_holder_id(alias):
     holder = cursor.execute(f"SELECT VID FROM Aliases WHERE Alias LIKE '%{alias}%'").fetchall()
     if not holder:
         response = requests.get(f"https://vocadb.net/api/artists?query={alias}&allowBaseVoicebanks=true&childTags=false&start=0&maxResults=1&getTotalCount=false&preferAccurateMatches=true&fields=AdditionalNames")
-        response = response.json()["items"][0]
-        if response:
+        if response.json()["items"]:
+            response = response.json()["items"][0]
             holder = response["id"]
             aliases = response["additionalNames"].split(", ")
             name = response["defaultName"]
@@ -63,5 +66,9 @@ def get_alias_holder_name(alias):
         connection.close()
         return None
 
-init()
-print(get_alias_holder_name("Hatsune Miku"))
+def main():
+    init()
+    print(get_alias_holder_name("Hatsune Miku"))
+
+if __name__ == "__main__":
+    main()
