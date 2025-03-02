@@ -7,7 +7,7 @@ current_date = str(date.today())
 connection = connect("Vocaloid.db")
 cursor = connection.cursor()
 
-def connected(func: function):
+def connected(func):
 
     def wrapper(*args, **kwargs):
         connection = connect("Vocaloid.db")

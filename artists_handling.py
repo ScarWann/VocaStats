@@ -11,6 +11,7 @@ def init(cursor):
     cursor.execute("CREATE TABLE Artists (VID int, Name nvarchar(255))")
     cursor.execute("CREATE TABLE Aliases (VID int, Alias nvarchar(255))")
 
+@connected
 def get_alias_holder_id(cursor, alias):
     holder = cursor.execute(f"SELECT VID FROM Aliases WHERE Alias LIKE '%{alias}%'").fetchall()
     if not holder:
