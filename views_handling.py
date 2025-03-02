@@ -4,27 +4,23 @@ import os
 import googleapiclient.discovery
 import googleapiclient.errors
 from google.oauth2.credentials import Credentials
+from main_db import connected
 
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
-def initialise_PV_database():
-    connection = connect("Vocaloid.db")
-    cursor = connection.cursor()
+@connected
+def initialise_PV_database(cursor):
     cursor.execute("CREATE TABLE YoutubePVs (ID INTEGER PRIMARY KEY, SongVID int, YTID nvarchar(12))")
-    cursor.close()
 
-def append_YTPV(id: int):
+@connected
+def append_YTPV(cursor, id: int):
     YTPVs = []
-    connection = connect("Vocaloid.db")
-    cursor = connection.cursor()
     response = get(f'https://vocadb.net/api/songs/{id}?fields=PVs')
     PVs = response.json()["pvs"]
     for PV in PVs:
         if PV["service"] == "Youtube":
             cursor.execute(f"INSERT INTO YoutubePVs (SongVID, YTID) VALUES ({id}, '{PV["url"][-11:]}')")
             YTPVs.append(PV["url"][-11:])
-    connection.commit()
-    connection.close()
     return YTPVs
 
 def request_token(filename: str):

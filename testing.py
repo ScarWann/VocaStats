@@ -1,16 +1,15 @@
-from sqlite3 import connect
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.axis import Axis   
 from datetime import date
+from main_db import connected
 
 current_date = str(date.today())
 mpl.style.use('bmh')
 
-def analysis(artists: list):
-    connection = connect("Vocaloid.db")
-    cursor = connection.cursor()
+@connected
+def analysis(cursor, artists: list):
     plt.rcParams['font.family'] = "Noto Sans CJK JP"
     mode = input("Enter mode:\nSongs per months - spm\nSongs at month - sam\nSongs increase per year - siy\nSongs per year - spy\nSongs at year - say\nSongs per artist - sba\n")
     fig, ax = plt.subplots()

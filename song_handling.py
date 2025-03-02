@@ -1,8 +1,8 @@
-from requests import get
-import sqlite3
 from artists_handling import get_alias_holder_name
+from main_db import connected
 
-def fetch_songs(artist, comparison_type, date_type):
+@connected
+def fetch_songs(cursor, artist, comparison_type, date_type):
     rev_date_dict = {4 : ["year", "years", "yearly"],
                      7 : ["month", "months", "monthly"],
                      10 : ["day", "days", "daily"]}
@@ -13,8 +13,6 @@ def fetch_songs(artist, comparison_type, date_type):
         if temp != None:
             artist = temp
     date = date_dict[date_type]
-    connection = sqlite3.connect("Vocaloid.db")
-    cursor = connection.cursor()
     x_axis = [0]
     y_axis = [0]
     occurences = cursor.execute(f"SELECT ReleaseDate, count(*) as '' FROM (SELECT * FROM Songs WHERE Artist LIKE '{artist}') GROUP BY ReleaseDate").fetchall()
@@ -41,5 +39,4 @@ def fetch_songs(artist, comparison_type, date_type):
                 y_axis.append(temp[i])
             else:
                 y_axis.append(temp[i] - temp[i - 1])
-    connection.close()
     return x_axis[1:], y_axis[1:]

@@ -7,9 +7,19 @@ current_date = str(date.today())
 connection = connect("Vocaloid.db")
 cursor = connection.cursor()
 
+def connected(func: function):
 
-def main():
-    bulk_fetch_songs(106996)
+    def wrapper(*args, **kwargs):
+        connection = connect("Vocaloid.db")
+        cursor = connection.cursor()
+        result = func(cursor, *args, **kwargs)
+        cursor.close()
+        connection.commit()
+        connection.close()
+        return result
+    
+    return wrapper
+
 
 def reinitialise_main_database():
     try:
@@ -101,6 +111,9 @@ def fetch_song_artists(song_ID: int):
     for artist in response.json()["artists"]:
         artists.append(artist["name"])
     return artists
+
+def main():
+    bulk_fetch_songs(106996)
 
 if __name__ == "__main__":
     main()
