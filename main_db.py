@@ -4,8 +4,6 @@ from datetime import date, datetime, timedelta
 
 
 current_date = str(date.today())
-connection = connect("Vocaloid.db")
-cursor = connection.cursor()
 
 def connected(func):
 
@@ -20,22 +18,21 @@ def connected(func):
     
     return wrapper
 
-
-def reinitialise_main_database():
+@connected
+def reinitialise_main_database(cursor):
     try:
         cursor.execute("DROP TABLE Songs")
     except:
         pass
     cursor.execute("CREATE TABLE Songs (ID INTEGER PRIMARY KEY, VID int, Type nvarchar(255), ReleaseDate Date, Name nvarchar(255), TrackedStatus BOOLEAN, ImgURL nvarchar(255))")
-    connection.commit()
 
-def reinitialize_artist_database():
+@connected
+def reinitialize_artist_database(cursor):
     try:
         cursor.execute("DROP TABLE SongArtists")
     except:
         pass
     cursor.execute("CREATE TABLE SongArtists (ID INTEGER PRIMARY KEY, SongVID int, ReleaseDate Date, Name nvarchar(255))")
-    connection.commit()
 
 def requestStatus(Response):
     if Response.status_code == 200:
@@ -47,15 +44,18 @@ def add_days(start_date: str, days: int):
     return str(datetime.strptime(start_date, "%Y-%m-%d") \
                               + timedelta(days))[:10]
 
-def get_last_song_date_by_singer(singer: str) -> str:
+@connected
+def get_last_song_date_by_singer(cursor, singer: str) -> str:
     return cursor.execute(f"""SELECT max(ReleaseDate) FROM
                             (SELECT * FROM 
                             SongArtists WHERE Name='{singer}')""").fetchone()[0]
 
-def get_last_id() -> int:
+@connected
+def get_last_id(cursor) -> int: #POSSIBLY OUTDATED
     return cursor.execute(f"SELECT max(ID) FROM Songs").fetchone()[0]
     
-def bulk_fetch_songs(artist_ID: int, start_date = None, step = 1, min_length = None, max_length = None, console_report = True):
+@connected
+def bulk_fetch_songs(cursor, artist_ID: int, start_date = None, step = 1, min_length = None, max_length = None, console_report = True):
     if console_report:
         passed = 0
     if max_length:
@@ -100,7 +100,6 @@ def bulk_fetch_songs(artist_ID: int, start_date = None, step = 1, min_length = N
                     #artist = artist.replace("'", "")
                     cursor.execute(f"INSERT INTO SongArtists (SongVID, ReleaseDate, Name) VALUES ({song["id"]}, '{date}', '{artist}')")
                 cursor.execute(f"INSERT INTO Songs (VID, ReleaseDate, Type, Name) VALUES ({song["id"]}, '{date}', '{song["songType"]}', '{song["name"]}')")
-                connection.commit()
         if start_date:
             print(start_date, end_date)
         print(f"Passed {passed} songs, appended {len(songs) - passed} songs, recieved {len(songs)} songs")
