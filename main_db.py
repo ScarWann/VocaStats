@@ -10,7 +10,10 @@ def connected(func):
     def wrapper(*args, **kwargs):
         connection = connect("Vocaloid.db")
         cursor = connection.cursor()
-        result = func(cursor, *args, **kwargs)
+        if args[0] != None:
+            result = func(cursor, *args, **kwargs)
+        else:
+            result = func(cursor, *args[1:], **kwargs)
         cursor.close()
         connection.commit()
         connection.close()
@@ -19,40 +22,26 @@ def connected(func):
     return wrapper
 
 @connected
-def reinitialise_main_database(cursor):
+def reinitialise_song_info_table(cursor):
+    # General song info table, only used for the frontend and view updates
     try:
-        cursor.execute("DROP TABLE Songs")
+        cursor.execute("DROP TABLE SongInfo")
     except:
         pass
-    cursor.execute("CREATE TABLE Songs (ID INTEGER PRIMARY KEY, VID int, Type nvarchar(255), ReleaseDate Date, Name nvarchar(255), TrackedStatus BOOLEAN, ImgURL nvarchar(255))")
+    cursor.execute("CREATE TABLE SongInfo (VocadbID INTEGER PRIMARY KEY, Type nvarchar(255), ReleaseDate Date, TrackedStatus BOOLEAN, ImgURL nvarchar(255))")
 
 @connected
-def reinitialize_artist_database(cursor):
+def reinitialize_song_artists_table(cursor):
+    # Main table for counting songs by artist per date
     try:
         cursor.execute("DROP TABLE SongArtists")
     except:
         pass
-    cursor.execute("CREATE TABLE SongArtists (ID INTEGER PRIMARY KEY, SongVID int, ReleaseDate Date, Name nvarchar(255))")
-
-def requestStatus(Response):
-    if Response.status_code == 200:
-        print("Request successful")
-    else:
-        print("Requst unsuccessful, error type --", Response.status_code)
+    cursor.execute("CREATE TABLE SongArtists (SongVocadbID int, SongReleaseDate Date, ArtistName nvarchar(255)), (ArtistName, SongVocadbID) PRIMARY KEY")
 
 def add_days(start_date: str, days: int):
     return str(datetime.strptime(start_date, "%Y-%m-%d") \
                               + timedelta(days))[:10]
-
-@connected
-def get_last_song_date_by_singer(cursor, singer: str) -> str:
-    return cursor.execute(f"""SELECT max(ReleaseDate) FROM
-                            (SELECT * FROM 
-                            SongArtists WHERE Name='{singer}')""").fetchone()[0]
-
-@connected
-def get_last_id(cursor) -> int: #POSSIBLY OUTDATED
-    return cursor.execute(f"SELECT max(ID) FROM Songs").fetchone()[0]
     
 @connected
 def bulk_fetch_songs(cursor, artist_ID: int, start_date = None, step = 1, min_length = None, max_length = None, console_report = True):
@@ -60,12 +49,12 @@ def bulk_fetch_songs(cursor, artist_ID: int, start_date = None, step = 1, min_le
         passed = 0
     if max_length:
         end_date = add_days(start_date, step)
-        response = requests.get(f"https://vocadb.net/api/songs?afterDate={start_date}&beforeDate={end_date}&artistId%5B%5D={artist_ID}&start=0&maxResults=100&getTotalCount=true&minLength={min_length}&maxLength={max_length}")
+        response = requests.get(f"https://vocadb.net/api/songs?afterDate={start_date}&beforeDate={end_date}&artistId%5B%5D={artist_ID}&start=0&maxResults=100&getTotalCount=true&minLength={min_length}&maxLength={max_length}&fields=ThumbUrl")
     elif start_date:
         end_date = add_days(start_date, step)
-        response = requests.get(f"https://vocadb.net/api/songs?afterDate={start_date}&beforeDate={end_date}&artistId%5B%5D={artist_ID}&start=0&maxResults=100&getTotalCount=true")
+        response = requests.get(f"https://vocadb.net/api/songs?afterDate={start_date}&beforeDate={end_date}&artistId%5B%5D={artist_ID}&start=0&maxResults=100&getTotalCount=true&fields=ThumbUrl")
     else:                         
-        response = requests.get(f"https://vocadb.net/api/songs?artistId%5B%5D={artist_ID}&start=0&maxResults=100&getTotalCount=true")
+        response = requests.get(f"https://vocadb.net/api/songs?artistId%5B%5D={artist_ID}&start=0&maxResults=100&getTotalCount=true&fields=ThumbUrl")
         if response.json()["totalCount"] > 100:
             bulk_fetch_songs(artist_ID, start_date = "2003-01-01", step = 16384)
     jresponse = response.json()
@@ -73,7 +62,8 @@ def bulk_fetch_songs(cursor, artist_ID: int, start_date = None, step = 1, min_le
         bulk_fetch_songs(artist_ID, start_date = start_date, step = step // 2)
         bulk_fetch_songs(artist_ID, start_date = add_days(start_date, step // 2), step = step // 2)
     elif jresponse["totalCount"] > 100 and step == 1 and start_date and not max_length :
-        bulk_fetch_songs(artist_ID, start_date, min_length = 0, max_length = 1024)
+        bulk_fetch_songs(artist_ID, start_date, min_length = 0, max_length = 512)
+        bulk_fetch_songs(artist_ID, start_date, min_length = 512, max_length = 100000)
     elif jresponse["totalCount"] > 100 and step == 1 and start_date and max_length and (max_length - min_length) > 1:
         bulk_fetch_songs(artist_ID, start_date, min_length = min_length, max_length = (max_length + min_length) // 2)
         bulk_fetch_songs(artist_ID, start_date, min_length = (max_length + min_length) // 2, max_length = max_length)
@@ -84,9 +74,9 @@ def bulk_fetch_songs(cursor, artist_ID: int, start_date = None, step = 1, min_le
         songs = jresponse["items"]
         for song in songs:
             song["name"] = song["name"].replace("'", "")
-            song["artistString"] = song["artistString"].replace("'", "").replace(",", " ").replace(" feat. ", " ")
+            song["artistString"] = song["artistString"].replace("'", "\'").replace(",", " ").replace(" feat. ", " ")
             date = song["publishDate"].split("T00:")[0]
-            db_song = cursor.execute(f"SELECT * FROM Songs WHERE VID={song['id']}").fetchone()
+            db_song = cursor.execute(f"SELECT * FROM Songs WHERE VocadbID={song['id']}").fetchone()
             if db_song:
                 if song["id"] == db_song[1]:
                     passed += 1
@@ -97,9 +87,9 @@ def bulk_fetch_songs(cursor, artist_ID: int, start_date = None, step = 1, min_le
                 except:
                     artists = fetch_song_artists(song["id"])
                 for artist in artists:
-                    #artist = artist.replace("'", "")
-                    cursor.execute(f"INSERT INTO SongArtists (SongVID, ReleaseDate, Name) VALUES ({song["id"]}, '{date}', '{artist}')")
-                cursor.execute(f"INSERT INTO Songs (VID, ReleaseDate, Type, Name) VALUES ({song["id"]}, '{date}', '{song["songType"]}', '{song["name"]}')")
+                    artist = artist.replace("'", "\'")
+                    cursor.execute(f"INSERT INTO SongArtists (SongVocadbID, SongReleaseDate, ArtistName) VALUES ({song["id"]}, '{date}', '{artist}')")
+                cursor.execute(f"INSERT INTO Songs (VocadbID, Type, ReleaseDate, Name, TrackedStatus, imgURL) VALUES ({song["id"]}, '{date}', '{song["songType"]}', '{song["name"]}', FALSE, '{song["thumbURL"]}')")
         if start_date:
             print(start_date, end_date)
         print(f"Passed {passed} songs, appended {len(songs) - passed} songs, recieved {len(songs)} songs")

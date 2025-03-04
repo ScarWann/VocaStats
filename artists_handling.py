@@ -2,13 +2,21 @@ import requests
 from main_db import connected
 
 @connected
-def init(cursor):
+def reinit_artist_table(cursor):
     try:
         cursor.execute("DROP TABLE Artists")
         cursor.execute("DROP TABLE Aliases")
     except:
         pass
     cursor.execute("CREATE TABLE Artists (VID int, Name nvarchar(255))")
+    cursor.execute("CREATE TABLE Aliases (VID int, Alias nvarchar(255))")
+
+@connected
+def reinit_alias_table(cursor):
+    try:
+        cursor.execute("DROP TABLE Aliases")
+    except:
+        pass
     cursor.execute("CREATE TABLE Aliases (VID int, Alias nvarchar(255))")
 
 @connected
@@ -43,7 +51,6 @@ def get_alias_holder_name(cursor, alias):
         return None
 
 def main():
-    init()
     print(get_alias_holder_name("Hatsune Miku"))
 
 if __name__ == "__main__":

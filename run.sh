@@ -1,0 +1,1 @@
+flask -A app run
