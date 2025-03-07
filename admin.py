@@ -1,4 +1,4 @@
-from views_handling import reinitialise_promotional_video_table, reinitialise_views_table, daily_update
+from views_handling import reinitialise_promotional_video_table, reinitialise_song_views_table, reinitialise_artist_views_table, daily_update
 from artists_handling import reinit_artist_table, reinit_alias_table
 from main_db import reinitialise_song_info_table, reinitialize_song_artists_table
 from main_db import bulk_fetch_songs
@@ -26,14 +26,15 @@ while True:
         case "update":
             daily_update()
         case "fetch":
-            bulk_fetch_songs(None, user_input.split[1])
+            bulk_fetch_songs(int(user_input.split()[1]))
         case "reinit":
             match user_input.split()[1]:
                 case "-a":
-                    reinitialise_song_info_table(None)
-                    reinitialize_song_artists_table(None)
-                    reinit_artist_table(None)
-                    reinit_alias_table(None)
-                    reinitialise_views_table(None)
-                    reinitialise_promotional_video_table(None)
+                    reinitialise_song_info_table()
+                    reinitialize_song_artists_table()
+                    reinit_artist_table()
+                    reinit_alias_table()
+                    reinitialise_song_views_table()
+                    reinitialise_artist_views_table()
+                    reinitialise_promotional_video_table()
     

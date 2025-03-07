@@ -14,11 +14,10 @@
         <p>Search for something<input class="input"> <a href="/trending">or browse the most popular things up to date </a></p>
         <div id="mainContainer">
             <div id="mainHeader">
-                <p id="singerOutput"> Amount of songs featuring <span id="singer">producer</span> (as of mid-november 2024): </p>
+                <p id="songPanel"> Amount of songs featuring <input type="text" id="artist" name="artist" placeholder="Enter producer name" ng-model="artistName">: </p>
                 <p>
-                    <input type="text" id="firstname" name="artist" placeholder="Enter producer name" ng-model="name">
-                    <label for="subtypeDropdown">Choose mode:</label>
-                    <select name="subtypes" id="subtypeDropdown">
+                    <label for="songSubtypeDropdown">Choose mode:</label>
+                    <select name="subtypes" id="songSubtypeDropdown">
                         <option value="">--Please choose an option--</option>
                         <option value="spd">Songs per day</option>
                         <option value="sam">Songs at month</option>
@@ -28,9 +27,15 @@
                         <option value="spy">Songs per year</option>
                         <option value="siy">Songs growth increase per year</option>
                     </select>
-                    <button type="submit" ng-click="submit()"> Submit </button> 
+                    <button type="submit" ng-click="submitArtist()"> Submit </button> 
                 </p>
-                <div id="chart" style="width:70%;height:70%;"></div>
+                <div id="amountChart" style="width:70%;height:70%;"></div>
+                <p id="viewsPanel"> Views graph of <input type="text" id="song" name="song" placeholder="Enter song name" ng-model="songName"></p>
+                <label for="subtypeDropdown">Choose mode:</label>
+                <select name="subtypes" id="subtypeDropdown">
+                    <option value="">--Please choose an option--</option>
+                    <option value="spd">Songs per day</option>
+                <div id="viewChart" style="width:70%;height:70%;"></div>
             </div>
         </div>
     </body>

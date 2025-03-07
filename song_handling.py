@@ -1,8 +1,8 @@
-from artists_handling import get_alias_holder_name
-from main_db import connected
+from artists_handling import get_alias_holder_name, get_alias_holder_id
+from app_decorators import connected
 
 @connected
-def fetch_songs(cursor, artist, comparison_type, date_type):
+def fetch_songs(artist, comparison_type, date_type, cursor = None):
     rev_date_dict = {4 : ["year", "years", "yearly"],
                      7 : ["month", "months", "monthly"],
                      10 : ["day", "days", "daily"]}
@@ -10,12 +10,15 @@ def fetch_songs(cursor, artist, comparison_type, date_type):
     date_dict = {v:k for k,li in rev_date_dict.items() for v in li}
     if not artist.isdigit():
         temp = get_alias_holder_name(artist)
+        print(temp)
         if temp != None:
             artist = temp
     date = date_dict[date_type]
     x_axis = [0]
     y_axis = [0]
-    occurences = cursor.execute(f"SELECT ReleaseDate, count(*) as '' FROM (SELECT * FROM SongArtists WHERE ArtistName LIKE '{artist}') GROUP BY ReleaseDate").fetchall()
+    print(artist)
+    occurences = cursor.execute(f"SELECT SongReleaseDate, count(*) as '' FROM (SELECT * FROM ( SELECT * FROM SongArtists WHERE ArtistName LIKE '%{artist}%') WHERE SongVocadbID IN (SELECT SongVocadbID FROM SongArtists GROUP BY SongVocadbID HAVING COUNT(*) = 1))").fetchall()
+    print(occurences)
     if comparison_type != "increase":
         for occurence in occurences:
             if x_axis[-1] != occurence[0][:date]:

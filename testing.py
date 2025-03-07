@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.axis import Axis   
 from datetime import date
-from main_db import connected
+from app_decorators import connected
 
 current_date = str(date.today())
 mpl.style.use('bmh')
