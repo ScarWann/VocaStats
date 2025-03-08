@@ -26,14 +26,17 @@
                         <option value="spy">Songs per year</option>
                         <option value="siy">Songs growth increase per year</option>
                     </select>
-                    <button type="submit" ng-click="submitArtist()"> Submit </button> 
+                    <button type="submit" ng-click="submitArtistFetching()"> Submit </button> 
                 </p>
                 <div id="amountChart" style="width:70%;height:70%;"></div>
-                <p id="viewsPanel"> Views graph of <input type="text" id="song" name="song" placeholder="Enter song name" ng-model="songName"></p>
+                <input type="text" id="song" name="song" placeholder="Enter tracked song name" ng-model="trackedSongName"> <button type="submit" ng-click="submitSongTracking()"> Submit </button> 
+                <p id="viewsPanel"> Views graph of <input type="text" id="song" name="song" placeholder="Enter song name" ng-model="viewsSongName"></p>
                 <label for="subtypeDropdown">Choose mode:</label>
                 <select name="subtypes" id="subtypeDropdown">
                     <option value="">--Please choose an option--</option>
-                    <option value="spd">Songs per day</option>
+                    <option value="spd">Views per day</option>
+                </select>
+                <button type="submit" ng-click="submitViewsFetching()"> Submit </button> 
                 <div id="viewChart" style="width:70%;height:70%;"></div>
             </div>
         </div>

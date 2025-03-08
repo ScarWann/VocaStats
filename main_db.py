@@ -86,7 +86,7 @@ def bulk_fetch_songs(artist_ID = 0, start_release_date = None, release_step = 1,
                     passed += 1
                     continue
             else:
-                artists = song["artistString"].replace("feat.", ",").split(",")
+                artists = song["artistString"].replace(" feat. ", ", ").split(", ")
                 if "various" in artists:
                     artists = fetch_song_artists(song["id"])
                 artists = set(artists)
@@ -104,12 +104,14 @@ def fetch_song_artists(song_ID: int):
         artists.append(artist["name"])
     return artists
 
-def main():
-    for overflow in det_overflows:
-        logs = bulk_fetch_songs(start_release_date = overflow, release_step = 1)
+@connected
+def main(cursor = None):
+    pass
+    #for overflow in det_overflows:
+    #    logs = bulk_fetch_songs(start_release_date = overflow, release_step = 1)
     #print(f"{logs[4]} songs expected, {logs[3]} songs recieved, {logs[0]} songs passed, {logs[1]} songs appended, {logs[2]} songs caused an error")
-    print(f"{logs[3]} songs expected, {logs[3]} songs recieved, {logs[0]} songs passed, {logs[1]} songs appended, {logs[2]} songs caused an error")
-    print(new_overflows)
+    #print(f"{logs[3]} songs expected, {logs[3]} songs recieved, {logs[0]} songs passed, {logs[1]} songs appended, {logs[2]} songs caused an error")
+    #print(new_overflows)
 
 if __name__ == "__main__":
     main()

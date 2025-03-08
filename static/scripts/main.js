@@ -1,10 +1,9 @@
 var submitApp = angular.module('singersSongsApp', []);
 submitApp.controller('singersSongsController', function($scope) {
-    $scope.submitArtist = async function() {
+    $scope.submitArtistFetching = async function() {
     const response = await fetch("/songAmounts.json", {
         method: "POST",
         body: JSON.stringify({
-            type: "songs",
             subtype: document.getElementById("songSubtypeDropdown").value,
             artists: [$scope.artistName]
         }),
@@ -13,25 +12,42 @@ submitApp.controller('singersSongsController', function($scope) {
         }
     });
     const json = await response.json();
-    $scope.json = json;
+    $scope.amountsjson = json;
     Plotly.newPlot( document.getElementById('amountChart'), 
                     [json.body[0]],
                     {paper_bgcolor: document.getElementById("body").style.backgroundColor,
                     plot_bgcolor: document.getElementById("body").style.backgroundColor},
                     {responsive: true});
     };
-    $scope.submitSong = async function() {
-        const response = await fetch("/songViews.json", {
-            method: "POST",
-            body: JSON.stringify({
-                type: "views",
-                subtype: document.getElementById("viewsSubtypeDropdown").value,
-                songs: [$scope.songName]
-            }),
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            }
-        });
-        
+    $scope.submitSongFetching = async function() {
+    const response = await fetch("/songViews.json", {
+        method: "POST",
+        body: JSON.stringify({
+            subtype: document.getElementById("viewsSubtypeDropdown").value,
+            songs: [$scope.viewsSongName]
+        }),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    });
+    const json = await response.json();
+    $scope.viewsjson = json;
+    Plotly.newPlot( document.getElementById('viewChart'), 
+                [json.body[0]],
+                {paper_bgcolor: document.getElementById("body").style.backgroundColor,
+                plot_bgcolor: document.getElementById("body").style.backgroundColor},
+                {responsive: true});
+    }
+    $scope.submitSongTracking = async function() {
+    const response = await fetch("/trackingResponse.json", {
+        method: "POST",
+        body: JSON.stringify({
+            song: $scope.trackedSongName
+        }),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+    alert(response.json()["message"])
     }
 });

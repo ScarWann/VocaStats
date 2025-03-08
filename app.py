@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from song_handling import fetch_songs
-from views_handling import fetch_views
+from views_handling import fetch_views, track_song_views
 
 app = Flask(__name__)
 
@@ -38,7 +38,6 @@ def return_views():
     response = {
         'status': 200,
         'message': 'OK',
-        'body': []
         }
     x_axis, y_axis = fetch_views(request.json["songs"])[0]
     response["body"].append({'x': x_axis,
@@ -47,6 +46,23 @@ def return_views():
                                 'plot_bgcolor': 'pink'})
     return jsonify(response)
     
+@app.route("/trackingResponse.json", methods = ["POST"])
+def tracking_response():
+    try:
+        track_song_views(request.json["song"])
+        response = {
+        'status': 200,
+        'message': 'OK',
+        }
+        return jsonify(response)
+    except:
+        response = {
+        'status': 500,
+        'message': 'Internal server error',
+        }
+        return jsonify(response)
+
+
 @app.route("/")
 def return_template():
     return render_template("main.html")

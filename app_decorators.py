@@ -3,7 +3,7 @@ from sqlite3 import connect
 def connected(func):
 
     def wrapper(*args, **kwargs):
-        #print(args, kwargs)
+        print(args, kwargs)
         connection = connect("Vocaloid.db")
         cursor = connection.cursor()
         result = func(*args, cursor=cursor, **kwargs)

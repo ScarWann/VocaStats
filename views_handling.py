@@ -1,5 +1,5 @@
 from requests import get
-from datetime import datetime
+from datetime import date
 import os
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -33,6 +33,11 @@ def reinitialise_artist_views_table(cursor = None):
     cursor.execute("CREATE TABLE ArtistViews (ArtistVocadbID int, updateDate Date, viewCount int, PRIMARY KEY (ArtistVocadbID, updateDate))")
 
 @connected
+def track_song_views(song_vocadb_ID: int, cursor = None):
+    print(song_vocadb_ID)
+    cursor.execute(f"UPDATE SongInfo SET TrackedStatus = TRUE WHERE VocadbID = {song_vocadb_ID}")
+
+@connected
 def append_youtube_promotional_video(id: int, cursor = None):
     YTPVs = ""
     response = get(f'https://vocadb.net/api/songs/{id}?fields=PVs')
@@ -46,7 +51,7 @@ def append_youtube_promotional_video(id: int, cursor = None):
                 YTPVs = f"{PV['url'][-11:]}"
     return YTPVs
 
-def request_token(filename: str):
+def request_token():
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     flow = InstalledAppFlow.from_client_secrets_file(
@@ -54,7 +59,7 @@ def request_token(filename: str):
 
     credentials = flow.run_local_server(port=0)
 
-    with open(f'{filename}.json', 'w') as token_file:
+    with open('token.json', 'w') as token_file:
         token_file.write(credentials.to_json())
 
 def refresh_token():
@@ -114,18 +119,19 @@ def fetch_views_by_vocadb_id(vocadb_ID: int, cursor = None):
 
 @connected
 def update_views_for_song(vocadb_ID: int, cursor = None):
-    cursor.execute(f"INSERT INTO SongViews (SongVocadbID, updateDate, viewCount) VALUES ({vocadb_ID}, {str(datetime.now())[:10]}, {fetch_views_by_vocadb_id(vocadb_ID)})")
+    cursor.execute(f"INSERT INTO SongViews (SongVocadbID, updateDate, viewCount) VALUES ({vocadb_ID}, '{str(date.today())}', {fetch_views_by_vocadb_id(vocadb_ID)})")
 
 @connected
 def update_all_songs(cursor = None):
-    queue = cursor.execute(f"SELECT SongVocadbID FROM SongInfo WHERE TrackedStatus=TRUE").fetchall()
+    queue = cursor.execute("SELECT VocadbID FROM SongInfo WHERE TrackedStatus=TRUE").fetchall()
     for song in queue:
-        if True:
-            pass
+        copy = cursor.execute(f"SELECT SongVocadbID FROM (SELECT * FROM SongViews WHERE UpdateDate = '{str(date.today())}') WHERE SongVocadbID = '{song[0]}'").fetchall()
+        if not copy:
+            update_views_for_song(song[0])
 
 
 def main():
-    print(fetch_views_by_vocadb_id(365620))
+    pass
 
 
 if __name__ == "__main__":
