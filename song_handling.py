@@ -17,8 +17,7 @@ def fetch_songs(artist, comparison_type, date_type, cursor = None):
     x_axis = [0]
     y_axis = [0]
     print(artist)
-    occurences = cursor.execute(f"SELECT SongReleaseDate, count(*) as '' FROM (SELECT * FROM ( SELECT * FROM SongArtists WHERE ArtistName LIKE '%{artist}%') WHERE SongVocadbID IN (SELECT SongVocadbID FROM SongArtists GROUP BY SongVocadbID HAVING COUNT(*) = 1))").fetchall()
-    print(occurences)
+    occurences = cursor.execute(f"SELECT SongReleaseDate, count(*) AS '' FROM (SELECT * FROM SongArtists WHERE ArtistName LIKE '%{artist}%') GROUP BY SongReleaseDate").fetchall()
     if comparison_type != "increase":
         for occurence in occurences:
             if x_axis[-1] != occurence[0][:date]:
