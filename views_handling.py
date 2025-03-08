@@ -1,5 +1,5 @@
 from requests import get
-from math import ceil
+from datetime import datetime
 import os
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -14,7 +14,7 @@ def reinitialise_promotional_video_table(cursor = None):
         cursor.execute("DROP TABLE YoutubePromotionalVideos")
     except:
         pass
-    cursor.execute("CREATE TABLE YoutubePromotionalVideos (SongVocadbID INTEGER PRIMARY KEY, YoutubeID nvarchar(12))")
+    cursor.execute("CREATE TABLE YoutubePromotionalVideos (SongVocadbID int, YoutubeID nvarchar(12), HighPriority boolean)")
 
 @connected
 def reinitialise_song_views_table(cursor = None):
@@ -22,7 +22,7 @@ def reinitialise_song_views_table(cursor = None):
         cursor.execute("DROP TABLE SongViews")
     except:
         pass
-    cursor.execute("CREATE TABLE SongViews (SongVocadbID int, updateDate Date, YoutubeID nvarchar(12), viewCount int, PRIMARY KEY (SongVocadbID, updateDate))")
+    cursor.execute("CREATE TABLE SongViews (SongVocadbID int, updateDate Date, viewCount int, PRIMARY KEY (SongVocadbID, updateDate))")
 
 @connected
 def reinitialise_artist_views_table(cursor = None):
@@ -34,13 +34,16 @@ def reinitialise_artist_views_table(cursor = None):
 
 @connected
 def append_youtube_promotional_video(id: int, cursor = None):
-    YTPVs = []
+    YTPVs = ""
     response = get(f'https://vocadb.net/api/songs/{id}?fields=PVs')
     PVs = response.json()["pvs"]
-    for PV in PVs:
+    for i, PV in enumerate(PVs):
         if PV["service"] == "Youtube":
-            cursor.execute(f"INSERT INTO YoutubePromotionalVideos (SongVocadbID, YoutubeID) VALUES ({id}, '{PV["url"][-11:]}')")
-            YTPVs.append(PV["url"][-11:])
+            cursor.execute(f"INSERT INTO YoutubePromotionalVideos (SongVocadbID, YoutubeID) VALUES ({id}, '{PV['url'][-11:]}')")
+            if i:
+                YTPVs = f"{YTPVs},{PV['url'][-11:]}"
+            else:
+                YTPVs = f"{PV['url'][-11:]}"
     return YTPVs
 
 def request_token(filename: str):
@@ -93,21 +96,37 @@ def fetch_views(youtubeID: str):
     if type(response["items"]) == list:
         return [item["statistics"]["viewCount"] for item in response["items"]]
     else:
-        return yt_request(youtubeID)["items"]["statistics"]["viewCount"]
+        return response["items"]["statistics"]["viewCount"]
 
 @connected
-def update(cursor = None):
-    queue = cursor.execute("SELECT YoutubeID FROM YoutubePromotionalVideos WHERE TrackedStatus=TRUE").fetchall()
+def fetch_views_by_vocadb_id(vocadb_ID: int, cursor = None):
+    urls = cursor.execute(f"SELECT YoutubeID FROM YoutubePromotionalVideos WHERE SongVocadbID IS {vocadb_ID}").fetchall()
+    url_string = ""
+    if not urls:
+        url_string = append_youtube_promotional_video(vocadb_ID)
+    else:
+        for i, url in enumerate(urls):
+            if not i: 
+                url_string = url[0]
+            else:
+                url_string = f"{url_string},{url[0]}"
+    return sum(map(int, fetch_views(url_string)))
 
 @connected
-def daily_update(cursor = None):
-    pass
-    
+def update_views_for_song(vocadb_ID: int, cursor = None):
+    cursor.execute(f"INSERT INTO SongViews (SongVocadbID, updateDate, viewCount) VALUES ({vocadb_ID}, {str(datetime.now())[:10]}, {fetch_views_by_vocadb_id(vocadb_ID)})")
 
-            
+@connected
+def update_all_songs(cursor = None):
+    queue = cursor.execute(f"SELECT SongVocadbID FROM SongInfo WHERE TrackedStatus=TRUE").fetchall()
+    for song in queue:
+        if True:
+            pass
+
 
 def main():
-    print(fetch_views("OvL8ptbBGIc,OvL8ptbBGIc"))
+    print(fetch_views_by_vocadb_id(365620))
+
 
 if __name__ == "__main__":
     main()

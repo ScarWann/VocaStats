@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from song_handling import fetch_songs
+from views_handling import fetch_views
 
 app = Flask(__name__)
 
@@ -30,6 +31,20 @@ def return_songs_by_artist():
                                  'y': y_axis,
                                  'mode': 'lines',
                                  'plot_bgcolor': 'pink'})
+    return jsonify(response)
+
+@app.route("/viewsAmounts.json", methods = ["POST"])
+def return_views():
+    response = {
+        'status': 200,
+        'message': 'OK',
+        'body': []
+        }
+    x_axis, y_axis = fetch_views(request.json["songs"])[0]
+    response["body"].append({'x': x_axis,
+                                'y': y_axis,
+                                'mode': 'lines',
+                                'plot_bgcolor': 'pink'})
     return jsonify(response)
     
 @app.route("/")
